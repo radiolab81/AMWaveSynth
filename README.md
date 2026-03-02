@@ -25,3 +25,16 @@ Audio modulation can be created with programs like ffmpeg:
 `ffmpeg -re -i URL_station_1  -af "lowpass=f=4500, volume=0.8, acompressor=threshold=-10dB:ratio=4"   -f u8 -ar 25000 -ac 1 udp://127.0.0.1:1234 &`
 
 `ffmpeg -re -i URL station_2  -af "lowpass=f=4500, volume=0.8, acompressor=threshold=-10dB:ratio=4"   -f u8 -ar 25000 -ac 1 udp://127.0.0.1:1235 &`
+
+
+Additionally, there is a multilingual PythonTK user interface for controlling the entire transmission process. Transmitters can be configured by specifying the frequency, audio bandwidth, and playback source (local/remote URL).
+
+![UI1](https://github.com/radiolab81/AMWaveSynth/blob/main/www/UI.jpg "Logo Title Text 1")
+
+Stations can be aligned according to specific rf wave plans.
+
+![UI2](https://github.com/radiolab81/AMWaveSynth/blob/main/www/UI2.jpg "Logo Title Text 1")
+
+Predefined internet radio stations can be selected via a built-in station database (stations.db).
+
+![UI3](https://github.com/radiolab81/AMWaveSynth/blob/main/www/UI3.jpg "Logo Title Text 1")
