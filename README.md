@@ -38,3 +38,7 @@ Stations can be aligned according to specific rf wave plans.
 Predefined internet radio stations can be selected via a built-in station database (stations.db).
 
 ![UI3](https://github.com/radiolab81/AMWaveSynth/blob/main/www/UI3.jpg "Logo Title Text 1")
+
+Multiple complete configured broadcasting landscapes can be mapped as a CSV file, imported and exported.
+
+
