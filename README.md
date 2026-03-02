@@ -41,4 +41,13 @@ Predefined internet radio stations can be selected via a built-in station databa
 
 Multiple complete configured broadcasting landscapes can be mapped as a CSV file, imported and exported.
 
+![UI4](https://github.com/radiolab81/AMWaveSynth/blob/main/www/modulator_debug.jpg "Logo Title Text 1")
 
+Audio source gain (via AGC) and RF-DAC saturation is visible in the modulator console during transmission. The modulator can be easily switched to 16-bit audio and 10-16 bit wide RF-DACs. This would easily enable transmissions via STEMLab, Adalm2000, and other DACs (R2R ladder).
+
+## Benchmarks:
+
+| CPU/RAM       | 2.5MSPS LW/lower BC band | 5MSPS full 2.5MHz rf spectrum  |
+| ------------- |:-------------:| -----:|
+| Core2Duo/8GB  | 8-10 live stations | 5-6 live stations |
+| Core3i 1st gen/4GB| 11-13 live stations  |  8-10 live stations |
