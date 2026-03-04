@@ -6,7 +6,7 @@ The AMWaveSynth is an environment for generating multiple parallel running AM-mo
 
 The AMWaveSynth receives the modulation signal as PCM samples over UDP ports (1234 and above), the RF signal containing all radio stations is available as a data stream on port 12345 for further processing or transmission with an SDR transmitter such as the FL2K-device.
 
-There are two versions of the modulator as a console program: one for a medium samplerate of 2.5 MSPS (mainly for supplying longwave radio and HF wirewave receivers, the lower medium wave range is also reached) and a 5-MSPS version for the entire frequency range up to 2.5 MHz.
+There are two versions of the modulator as a console program: one for a medium samplerate of 2.5 MSPS (mainly for supplying longwave radio and RF wirecast receivers (Biennophone/TD-HF/Filodiffusione), the lower medium wave range is also reached) and a 5-MSPS version for the entire frequency range up to 2.5 MHz.
 
 The modulator is used as follows:
 
@@ -51,3 +51,23 @@ Audio source gain (AGC controlled) and RF-DAC saturation is visible in the modul
 | ------------- |:-------------:| -----:|
 | Core2Duo/8GB  | 8-10 live stations | 5-6 live stations |
 | Core3i 1st gen/4GB| 11-13 live stations  |  8-10 live stations |
+
+## Prerequisite for compiling on Debian 12/13
+
+build-essential 
+
+cmake
+
+git
+
+libusb-1*-dev 
+
+bc          (for amtxgui)
+
+python3-tk  (for amtxgui)
+
+
+liquiddsp and osmo-fl2k (are already in the lib directory and can be built with the associated scripts)
+
+Please make all shell scripts executable in project dir, amtxgui and lib using `chmod +x *.sh`, if this is not already the case on your system.
+Should you require root privileges to run programs like fl2k_, create the necessary exception rule or start the application with root privileges by yourself.
