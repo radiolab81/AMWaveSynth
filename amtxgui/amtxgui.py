@@ -257,7 +257,7 @@ class RadioApp:
             self.main_proc.terminate(); self.main_proc = None
 
     def save_csv(self):
-        p = filedialog.asksaveasfilename(defaultextension=".csv")
+        p = filedialog.asksaveasfilename(defaultextension=".csv",filetypes=(("CSV Files", "*.csv"),))
         if p:
             with open(p, 'w', newline='', encoding='utf-8') as f:
                 w = csv.writer(f, delimiter=';')
@@ -265,7 +265,9 @@ class RadioApp:
                 for k in self.tree.get_children(): w.writerow(self.tree.item(k)['values'])
 
     def load_csv(self):
-        p = filedialog.askopenfilename()
+        p = filedialog.askopenfilename(
+    	filetypes=(("CSV Files", "*.csv"),)
+	)
         if p:
             for i in self.tree.get_children(): self.tree.delete(i)
             with open(p, 'r', encoding='utf-8') as f:
