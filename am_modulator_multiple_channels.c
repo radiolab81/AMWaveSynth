@@ -31,9 +31,11 @@ typedef struct {
     float gain;          
     float peak_hold;
     float freq;
+    float external_gain;
     int port;
 } Channel;
 
+// Thread für Modulationssigal
 void* audio_receiver(void* arg) {
     Channel *ch = (Channel*)arg;
     uint8_t buf[4096];
@@ -45,6 +47,38 @@ void* audio_receiver(void* arg) {
                 ch->head++;
             }
         } else { usleep(100); }
+    }
+    return NULL;
+}
+
+// Thread für die Steuersignale (Port 8888)
+typedef struct {
+    Channel *channels;
+    int num_transmitters;
+} ControlData;
+
+void* control_receiver(void* arg) {
+    ControlData *cd = (ControlData*)arg;
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    struct sockaddr_in addr = { .sin_family=AF_INET, .sin_port=htons(8888), .sin_addr.s_addr=INADDR_ANY };
+    bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+    
+    char buf[256];
+    while(1) {
+        ssize_t n = recv(sock, buf, sizeof(buf)-1, 0);
+        if (n > 0) {
+            buf[n] = '\0';
+            float f_val, g_val;
+            if (sscanf(buf, "%f:%f", &f_val, &g_val) == 2) {
+                // Suche den passenden Kanal anhand der Frequenz
+                for (int i = 0; i < cd->num_transmitters; i++) {
+                    if (fabsf(cd->channels[i].freq - f_val) < 1.0f) { // Frequenz-Match
+                        cd->channels[i].external_gain = g_val;
+                        break;
+                    }
+                }
+            }
+        }
     }
     return NULL;
 }
@@ -74,6 +108,7 @@ int main(int argc, char *argv[]) {
 
         channels[i].port = atoi(p_str);
         channels[i].freq = atof(f_str);
+	channels[i].external_gain = 1.0f;
         free(arg_copy);
 
         // Socket Setup
@@ -97,6 +132,11 @@ int main(int argc, char *argv[]) {
         pthread_t tid;
         pthread_create(&tid, NULL, audio_receiver, &channels[i]);
     }
+
+    // Starte den Control-Receiver
+    ControlData cd = { channels, num_transmitters };
+    pthread_t ctid;
+    pthread_create(&ctid, NULL, control_receiver, &cd);
 
     // TCP Setup für fl2k_tcp
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -150,7 +190,8 @@ int main(int argc, char *argv[]) {
                 // Mod-Index 0.7f (verhindert Übermodulation)
                 // Faktor 0.40f (gibt jedem Sender 40% (bei 2 TXs) vom DAC-Raum -> 80% Summe)
                 float Faktor = 0.80f / num_transmitters;
-                sum += (1.0f + channels[i].res_puffer[j] * 0.7f) * Faktor * c;
+		//  s(t) = Ac [ 1 + m(t)]*cos(2Pi*fc*t)   -> Ac = Ampl. des Trägers, m(t) = Modulationssignal, cos(2Pi...) = Träger
+                sum += (1.0f + channels[i].res_puffer[j] * 0.7f) * Faktor * c * channels[i].external_gain;
             }
             
 	    // Skalierung auf Bereich (Headroom gegen Splatter)
@@ -173,8 +214,8 @@ int main(int argc, char *argv[]) {
             for(int i=0; i < num_transmitters; i++) {
                 float mod_val = (fabsf(channels[i].last_min_in) > channels[i].last_max_in) ? 
                                  fabsf(channels[i].last_min_in) : channels[i].last_max_in;
-                printf("CH %d [%d]: Freq: %7.1f kHz | (slow AGC) Gain: %4.1fx | Eff. Mod: %5.1f%%\n", 
-                        i, channels[i].port, channels[i].freq/1000.0f, channels[i].gain, mod_val * 70.0f);
+                printf("CH %d [%d]: Freq: %7.1f kHz Ext-Gain: %4.2f | (slow AGC) Gain: %4.1fx | Eff. Mod: %5.1f%%\n", 
+                        i, channels[i].port, channels[i].freq/1000.0f, channels[i].external_gain, channels[i].gain, mod_val * 70.0f);
             }
             printf("----------------------------------------------------\n");
             printf("DAC Out (Signed): %6.1f / %6.1f (Safe: -128 bis 127)\n", dac_min, dac_max);
