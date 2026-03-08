@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
         channels[i].port = atoi(p_str);
         channels[i].freq = atof(f_str);
-	channels[i].external_gain = 1.0f;
+		channels[i].external_gain = 1.0f;
         free(arg_copy);
 
         // Socket Setup
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
         channels[i].head = channels[i].tail = 0;
         channels[i].gain = 1.0f;
         channels[i].peak_hold = 0.1f;
-	channels[i].resampler = msresamp_rrrf_create(200.0f, 60.0f);  
+		channels[i].resampler = msresamp_rrrf_create(200.0f, 60.0f);  
         channels[i].vco = nco_crcf_create(LIQUID_VCO); // LIQUID_VCO = using LUT
         nco_crcf_set_frequency(channels[i].vco, 2.0f * (float)M_PI * channels[i].freq / INTER_RATE);
 
@@ -188,11 +188,11 @@ int main(int argc, char *argv[]) {
                 // Mod-Index 0.7f (verhindert Übermodulation)
                 // Faktor 0.40f (gibt jedem Sender 40% (bei 2 TXs) vom DAC-Raum -> 80% Summe)
                 float Faktor = 0.80f / num_transmitters;
-		//  s(t) = Ac [ 1 + m(t)]*cos(2Pi*fc*t)   -> Ac = Ampl. des Trägers, m(t) = Modulationssignal, cos(2Pi...) = Träger        
+				//  s(t) = Ac [ 1 + m(t)]*cos(2Pi*fc*t)   -> Ac = Ampl. des Trägers, m(t) = Modulationssignal, cos(2Pi...) = Träger        
                 sum += (1.0f + channels[i].res_puffer[j] * 0.5f) * Faktor * c * channels[i].external_gain;
             }
             
-	    // Skalierung auf Bereich (Headroom gegen Splatter)
+	     // Skalierung auf Bereich (Headroom gegen Splatter)
             float val_f = sum * 60.0f; 
 
 	     // Hard Limiters (Safety First)
