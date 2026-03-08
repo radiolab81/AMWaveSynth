@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
         channels[i].port = atoi(p_str);
         channels[i].freq = atof(f_str);
-	channels[i].external_gain = 1.0f;
+		channels[i].external_gain = 1.0f;
         free(arg_copy);
 
         // Socket Setup
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
         channels[i].head = channels[i].tail = 0;
         channels[i].gain = 1.0f;
         channels[i].peak_hold = 0.1f;
-	//(one pass 100times-up 25kHz->2.5MHz , cutoff @ 25kHz*0.18 = 4.5kHz, 60dB stopband)
+		//(one pass 100times-up 25kHz->2.5MHz , cutoff @ 25kHz*0.18 = 4.5kHz, 60dB stopband)
         //channels[i].resampler = resamp_rrrf_create(100.0f, 20, 0.18f, 60.0f, 64); // 4.5kHz/60dB , for lower CPU use msresamp_rrrf (Multi-stage Resampler). It breaks the resampling into smaller, more efficient filter stages.
         channels[i].resampler = msresamp_rrrf_create(100.0f, 60.0f);  
         channels[i].vco = nco_crcf_create(LIQUID_VCO); // LIQUID_VCO = using LUT
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
                 // Mod-Index 0.7f (verhindert Übermodulation)
                 // Faktor 0.40f (gibt jedem Sender 40% (bei 2 TXs) vom DAC-Raum -> 80% Summe)
                 float Faktor = 0.80f / num_transmitters;
-		//  s(t) = Ac [ 1 + m(t)]*cos(2Pi*fc*t)   -> Ac = Ampl. des Trägers, m(t) = Modulationssignal, cos(2Pi...) = Träger
+				//  s(t) = Ac [ 1 + m(t)]*cos(2Pi*fc*t)   -> Ac = Ampl. des Trägers, m(t) = Modulationssignal, cos(2Pi...) = Träger
                 sum += (1.0f + channels[i].res_puffer[j] * 0.7f) * Faktor * c * channels[i].external_gain;
             }
             
