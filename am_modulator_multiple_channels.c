@@ -1,4 +1,4 @@
-// Kompilieren: gcc -O3 -march=native am_modulator_multiple_channels.c -o am_modulator -lm -lpthread -lliquid
+// Kompilieren: gcc -O3 -march=native am_modulator_multiple_channels.c -o am_modulator -lpthread -lliquid -lm
 // Aufruf: ./am_modulator 1234:603000 1235:828000 1236:999000
 // sudo fl2k_tcp -a 127.0.0.1 -p 12345 -s 10000000
 
