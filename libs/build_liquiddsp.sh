@@ -2,7 +2,7 @@
 apt update
 apt install cmake
 unzip liquid-dsp-1.7.0.zip
-cd liquid-dsp-1.7.0
+cd liquid-dsp
 mkdir build
 cd build
 cmake ..
