@@ -19,7 +19,7 @@ while (( "$#" >= 4 )); do
     echo "Starte ffmpeg Instanz: $FREQ kHz | BW: $BW kHz | Port: $PORT"
    
     # ffmpeg -i "$URL" -af "lowpass=f=${BW}000" -f mpegts udp://127.0.0.1:$PORT &
-    ffmpeg -re -i "$URL" -af "lowpass=f=${BW}, volume=0.8, acompressor=threshold=-10dB:ratio=4"   -f u8 -ar 25000 -ac 1 udp://127.0.0.1:$PORT &    
+    ffmpeg -stream_loop -1 -re -i "$URL" -af "lowpass=f=${BW}, volume=0.8, acompressor=threshold=-10dB:ratio=4"   -f u8 -ar 25000 -ac 1 udp://127.0.0.1:$PORT &    
     
     # Den String für am_modulator zusammenbauen
     MOD_ARGS="$MOD_ARGS $PORT:$(($FREQ*1000))"
