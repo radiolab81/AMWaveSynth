@@ -52,6 +52,11 @@ Audio source gain (AGC controlled) and RF-DAC saturation is visible in the modul
 | Core2Duo/8GB  | 8-10 live stations | 5-6 live stations |
 | Core3i 1st gen/4GB| 11-13 live stations  |  8-10 live stations |
 
+
+#### You can also use add-ons like the AMWaveSynthPropagationSimulator https://github.com/radiolab81/AMWaveSynthPropagationSimulator to externally modify the carriers of the AMWaveSynth, for example to simulate day and night propagation or grayline transitions on a real radio.
+
+![UI5](https://github.com/radiolab81/AMWaveSynthPropagationSimulator/raw/main/www/mw_dusk_01.jpg "Logo Title Text 1")
+
 ## Prerequisite for compiling on Debian 12/13
 
 build-essential 
