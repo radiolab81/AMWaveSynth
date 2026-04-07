@@ -77,4 +77,4 @@ liquiddsp and osmo-fl2k (are already in the lib directory and can be built with 
 Please make all shell scripts executable in project dir, amtxgui and lib using `chmod +x *.sh`, if this is not already the case on your system.
 Should you require root privileges to run programs like fl2k_, create the necessary exception rule or start the application with root privileges by yourself.
 
-### FAQ: - if modulator process terminates with an illegal machine instruction on your CPU, you must build liquid-dsp with the option cmake -DENABLE_SIMD=OFF in the build_liquiddsp.sh 
+#### FAQ: - if modulator process terminates with an illegal machine instruction on your CPU, you must build liquiddsp with the option cmake -DENABLE_SIMD=OFF in the build_liquiddsp.sh 
