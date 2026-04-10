@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
     int client_fd = accept(listen_fd, NULL, NULL);
 
     float audio_in[AUDIO_CHUNK];
-    uint8_t dac_out[120000 * 4]; 
+    uint8_t dac_out[120000 * 4];
     int debug_counter = 0;
 
     while(1) {
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
                 float c = nco_crcf_cos(channels[i].vco); // nco cosinus for actual sample
                 nco_crcf_step(channels[i].vco); // next nco step
 
-		// SAFE SUMMATION:
+		 // SAFE SUMMATION:
                 // Mod-Index 0.7f (verhindert Übermodulation)
                 // Faktor 0.40f (gibt jedem Sender 40% (bei 2 TXs) vom DAC-Raum -> 80% Summe)
                 float Faktor = 0.80f / num_transmitters;
@@ -201,6 +201,14 @@ int main(int argc, char *argv[]) {
             
             int8_t val = (int8_t)val_f;
             for (int k = 0; k < 2; k++) dac_out[j * 2 + k] = (uint8_t)val;
+			/*  for (int k = 0; k < 1; k++) dac_out[j * 1 + k] = (uint8_t)val;   5 MSPS
+                for (int k = 0; k < 2; k++) dac_out[j * 2 + k] = (uint8_t)val;   10 MSPS
+                for (int k = 0; k < 3; k++) dac_out[j * 3 + k] = (uint8_t)val;   15 MSPS
+                k < 4: 20.0 MSPS 
+                k < 5: 25.0 MSP
+                ...
+            */
+
             
             if (val_f < dac_min) dac_min = val_f;
             if (val_f > dac_max) dac_max = val_f;
@@ -222,6 +230,11 @@ int main(int argc, char *argv[]) {
 
 	// streaming HF/RF to port 12345
         if (common_nw > 0) send(client_fd, dac_out, common_nw * 2, 0);
+		/* if (common_nw > 0) send(client_fd, dac_out, common_nw * 1, 0); 5 MSPS
+           if (common_nw > 0) send(client_fd, dac_out, common_nw * 2, 0); 10 MSPS
+           if (common_nw > 0) send(client_fd, dac_out, common_nw * 3, 0); 15 MSPS
+           ...
+        */
     }
     return 0;
 }
