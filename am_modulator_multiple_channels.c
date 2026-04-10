@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     int client_fd = accept(listen_fd, NULL, NULL);
 
     float audio_in[AUDIO_CHUNK];
-    uint8_t dac_out[60000 * 4]; 
+    uint8_t dac_out[60000 * 4]; // uint8_t dac_out[60000 * k]; k=2: 5.0 MSPS; k = 4: 10.0 MSPS; k = 6: 15.0 MSPS ; k = 8: 20.0 MSPS
     int debug_counter = 0;
 
     while(1) {
@@ -202,6 +202,13 @@ int main(int argc, char *argv[]) {
             if (val_f < -128.0f) val_f = -128.0f;
             
             int8_t val = (int8_t)val_f;
+			/* for (int k = 0; k < 2; k++) dac_out[j * 2 + k] = (uint8_t)val;   5 MSPS
+               for (int k = 0; k < 4; k++) dac_out[j * 4 + k] = (uint8_t)val;   10 MSPS
+               for (int k = 0; k < 5; k++) dac_out[j * 5 + k] = (uint8_t)val;   12.5 MSPS
+               k < 6: 15.0 MSPS (2.5 × 6)
+               k < 8: 20.0 MSPS (2.5 × 8)
+               ...
+            */
             for (int k = 0; k < 4; k++) dac_out[j * 4 + k] = (uint8_t)val;
             
             if (val_f < dac_min) dac_min = val_f;
@@ -222,8 +229,13 @@ int main(int argc, char *argv[]) {
             debug_counter = 0;
         }
 
-	// streaming HF/RF to port 12345
+	    // streaming HF/RF to port 12345
         if (common_nw > 0) send(client_fd, dac_out, common_nw * 4, 0);
+		/*  if (common_nw > 0) send(client_fd, dac_out, common_nw * 2, 0); 5 MSPS
+            if (common_nw > 0) send(client_fd, dac_out, common_nw * 4, 0); 10 MSPS
+            if (common_nw > 0) send(client_fd, dac_out, common_nw * 5, 0); 12.5 MSPS
+            ...
+        */
     }
     return 0;
 }
