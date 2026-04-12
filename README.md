@@ -43,7 +43,7 @@ Multiple complete configured broadcasting landscapes can be mapped as a CSV file
 
 ![UI4](https://github.com/radiolab81/AMWaveSynth/blob/main/www/modulator_debug.jpg "Logo Title Text 1")
 
-Audio source gain (AGC controlled) and RF-DAC saturation is visible in the modulator console during transmission. The modulator can be easily switched to 16-bit audio and 10-16 bit wide RF-DACs. This would easily enable transmissions via STEMLab, Adalm2000, and other DACs (R2R ladder).
+Audio source gain (AGC controlled) and RF-DAC saturation is visible in the modulator console during transmission. The modulator can be easily switched to 16-bit audio and 10-16 bit wide RF-DACs. This would easily enable transmissions via STEMLab, Adalm2000, and other DACs (R2R ladder) or to the smisdr project (https://github.com/radiolab81/smisdr)
 
 ## Benchmarks:
 
