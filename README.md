@@ -1,5 +1,5 @@
 # AMWaveSynth
-### Wave synthesizer for long- and mediumwave based on liquiddsp 
+### Wave synthesizer for long- and mediumwave 
 ![alt text](https://github.com/radiolab81/AMWaveSynth/blob/main/www/AMWaveSynth_rnd.jpg "Logo Title Text 1")
 
 The AMWaveSynth is an environment for generating multiple parallel running AM-modulated radiostations for transmission via an SDR.
@@ -45,12 +45,20 @@ Multiple complete configured broadcasting landscapes can be mapped as a CSV file
 
 Audio source gain (AGC controlled) and RF-DAC saturation is visible in the modulator console during transmission. The modulator can be easily switched to 16-bit audio and 10-16 bit wide RF-DACs. This would easily enable transmissions via STEMLab, Adalm2000, and other DACs (R2R ladder) or to the smisdr project (https://github.com/radiolab81/smisdr)
 
-## Benchmarks:
+## Benchmarks (liquid-dsp version):
 
 | CPU/RAM       | 2.5MSPS LW/lower BC band | 5MSPS full 2.5MHz rf spectrum  |
 | ------------- |:-------------:| -----:|
 | Core2Duo/8GB  | 8-10 live stations | 5-6 live stations |
 | Core3i 1st gen/4GB| 11-13 live stations  |  8-10 live stations |
+
+### Update: In addition to the Liquid-DSP version, there is now a 2.5/5 MSPS version that primarily works with 32-bit integers, providing a significant boost in terms of the number of radio stations that can be created, even on older CPUs !
+
+## Benchmarks (just 32bit Integer - version):
+| CPU/RAM       | 2.5MSPS LW/lower BC band | 5MSPS full 2.5MHz rf spectrum  |
+| ------------- |:-------------:| -----:|
+| Core2Duo/8GB  | 20+ no problems ...| ...|
+| Core3i 1st gen/4GB| uncountable ...| ... |
 
 
 #### You can also use add-ons like the AMWaveSynthPropagationSimulator https://github.com/radiolab81/AMWaveSynthPropagationSimulator to externally modify the carriers of the AMWaveSynth, for example to simulate day and night propagation or grayline transitions on a real radio.
