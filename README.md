@@ -59,12 +59,12 @@ Update: In addition to the liquid-dsp version, there is now a 2.5/5 MSPS version
 ### (just 32bit Integer - version): `./build_modulators_int.sh`
 | CPU/RAM       | 2.5MSPS LW/lower BC band | 5MSPS full 2.5MHz rf spectrum  |
 | ------------- |:-------------:| -----:|
-| Core2Duo/8GB  | 20+ no problems ...| ...|
-| Core3i 1st gen/4GB| uncountable ...| ... |
+| Core2Duo/8GB  | 20+ no problems ...| <---|
+| Core3i 1st gen/4GB| uncountable ;-) ...| <--- |
 
 ![PERF32](https://github.com/radiolab81/AMWaveSynth/blob/main/www/int32versionperf.jpg "Logo Title Text 1")
 
-An entire long and medium wave band, generated in real-time on Intel Core Core2Duo and transmitted by osmo-fl2k, with almost no cost to the CPU.
+An entire long and medium wave band, generated in real-time on Intel Core2Duo and transmitted by osmo-fl2k, with almost no cost to the CPU.
 
 ![PERF322](https://github.com/radiolab81/AMWaveSynth/blob/main/www/int32versionperf2.jpg "Logo Title Text 1")
 ![PERF323](https://github.com/radiolab81/AMWaveSynth/blob/main/www/cpu.jpg "Logo Title Text 1")
