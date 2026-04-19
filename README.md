@@ -54,7 +54,7 @@ Audio source gain (AGC controlled) and RF-DAC saturation is visible in the modul
 | Core2Duo/8GB  | 8-10 live stations | 5-6 live stations |
 | Core3i 1st gen/4GB| 11-13 live stations  |  8-10 live stations |
 
-Update: In addition to the Liquid-dsp version, there is now a 2.5/5 MSPS version that primarily works with 32-bit integers, providing a significant boost in terms of the number of radio stations that can be created, even on older CPUs !
+Update: In addition to the liquid-dsp version, there is now a 2.5/5 MSPS version that primarily works with 32-bit integers, providing a significant boost in terms of the number of radio stations that can be created, even on older CPUs !
 
 ### (just 32bit Integer - version): `./build_modulators_int.sh`
 | CPU/RAM       | 2.5MSPS LW/lower BC band | 5MSPS full 2.5MHz rf spectrum  |
@@ -63,6 +63,11 @@ Update: In addition to the Liquid-dsp version, there is now a 2.5/5 MSPS version
 | Core3i 1st gen/4GB| uncountable ...| ... |
 
 ![PERF32](https://github.com/radiolab81/AMWaveSynth/blob/main/www/int32versionperf.jpg "Logo Title Text 1")
+
+An entire long and medium wave band, generated in real-time on Intel Core Core2Duo and transmitted by osmo-fl2k, with almost no cost to the CPU.
+
+![PERF322](https://github.com/radiolab81/AMWaveSynth/blob/main/www/int32versionperf2.jpg "Logo Title Text 1")
+![PERF323](https://github.com/radiolab81/AMWaveSynth/blob/main/www/cpu.jpg "Logo Title Text 1")
 
 
 #### You can also use add-ons like the AMWaveSynthPropagationSimulator https://github.com/radiolab81/AMWaveSynthPropagationSimulator to externally modify the carriers of the AMWaveSynth, for example to simulate day and night propagation or grayline transitions on a real radio.
