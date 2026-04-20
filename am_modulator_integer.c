@@ -44,6 +44,7 @@ typedef struct {
     float freq;
     float external_gain;
     int32_t total_gain_int; 
+    int32_t carrier_base_int;
     
     int port;
 } Channel;
@@ -204,6 +205,7 @@ int main(int argc, char *argv[]) {
             // Berechne vorberechneten Gain-Faktor für Integer-Mathe (inkl. Mod-Index Skalierung 0.7)
             // Faktor 89.6 entspricht (16384 * 0.7) / 128
             channels[i].total_gain_int = (int32_t)(channels[i].gain * channels[i].external_gain * 89.6f);
+            channels[i].carrier_base_int = (int32_t)(16384.0f * channels[i].external_gain);
         }
 
         // ====================================================================
@@ -216,7 +218,8 @@ int main(int argc, char *argv[]) {
             // Modulationsregister updaten
             for (int i = 0; i < num_transmitters; i++) {
                 // Basis-Trägeramplitude ist 16384. Dazu addieren wir das skalierte Audio-Signal.
-                channels[i].mod_register = 16384 + (channels[i].audio_buf[a] * channels[i].total_gain_int);
+                //channels[i].mod_register = 16384 + (channels[i].audio_buf[a] * channels[i].total_gain_int);
+                channels[i].mod_register = channels[i].carrier_base_int + (channels[i].audio_buf[a] * channels[i].total_gain_int);
             }
 
             // 2. Das Modulationsregister für den Upsampling-Faktor (100x) halten
