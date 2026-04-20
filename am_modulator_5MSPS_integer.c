@@ -44,6 +44,7 @@ typedef struct {
     float freq;
     float external_gain;
     int32_t total_gain_int; 
+    int32_t carrier_base_int;
     
     int port;
 } Channel;
@@ -204,6 +205,7 @@ int main(int argc, char *argv[]) {
 
             // Gain für Integer-Mathe vorberechnen (Mod-Index 0.5 aus deinem Code entspricht Faktor 64.0f)
             channels[i].total_gain_int = (int32_t)(channels[i].gain * channels[i].external_gain * 64.0f);
+            channels[i].carrier_base_int = (int32_t)(16384.0f * channels[i].external_gain);
         }
 
         // ====================================================================
@@ -217,7 +219,7 @@ int main(int argc, char *argv[]) {
             // Modulationsregister updaten
             for (int i = 0; i < num_transmitters; i++) {
                 // Träger-Basisamplitude (16384) + moduliertes Signal
-                channels[i].mod_register = 16384 + (channels[i].audio_buf[a] * channels[i].total_gain_int);
+                channels[i].mod_register = channels[i].carrier_base_int + (channels[i].audio_buf[a] * channels[i].total_gain_int);
             }
 
             // Halten für 200 HF-Samples (5 MSPS)
