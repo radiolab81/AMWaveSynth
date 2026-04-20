@@ -1,5 +1,5 @@
 // Kompilieren: gcc -O3 -march=native am_modulator_integer.c -o am_modulator -lpthread -lm
-// Aufruf: ./am_modulator_5MSPS 1234:603000 1235:828000
+// Aufruf: ./am_modulator 1234:603000 1235:828000
 // sudo fl2k_tcp -a 127.0.0.1 -p 12345 -s 10000000
 
 #define _GNU_SOURCE
