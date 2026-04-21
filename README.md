@@ -6,7 +6,7 @@ The AMWaveSynth is an environment for generating multiple parallel running AM-mo
 
 The AMWaveSynth receives the modulation signal as PCM samples over UDP ports (1234 and above), the RF signal containing all radio stations is available as a data stream on port 12345 for further processing or transmission with an SDR transmitter such as the FL2K-device.
 
-There are two versions of the modulator as a console program: one for a medium samplerate of 2.5 MSPS (mainly for supplying longwave radio and RF wirecast receivers (Biennophone/TD-HF/Filodiffusione), the lower medium wave range is also reached) and a 5-MSPS version for the entire frequency range up to 2.5 MHz.
+There are two versions of the modulator as a console program: one for a medium (NCO) samplerate of 2.5 MSPS (mainly for supplying longwave radio and RF wirecast receivers (Biennophone/TD-HF/Filodiffusione), the lower medium wave range is also reached) and a 5-MSPS (NCO) version for the entire frequency range up to 2.5 MHz.
 
 The modulator is used as follows:
 
