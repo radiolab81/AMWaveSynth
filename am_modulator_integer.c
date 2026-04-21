@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <getopt.h> // Für Befehlszeilenparameter
 
 #define INTER_RATE   2500000.0f 
 #define RING_SIZE    1048576
@@ -95,9 +96,28 @@ void* control_receiver(void* arg) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Nutzung: %s <port1:freq1> <port2:freq2> ...\n", argv[0]);
-        fprintf(stderr, "Beispiel: %s 1234:603000 1235:828000\n", argv[0]);
+    int bit_depth = 8;
+    float sample_rate_msps = 10.0f;
+    
+    int opt;
+    while ((opt = getopt(argc, argv, "b:s:")) != -1) {
+        switch (opt) {
+            case 'b': bit_depth = atoi(optarg); break;
+            case 's': sample_rate_msps = atof(optarg); break;
+            default:
+                fprintf(stderr, "Nutzung: %s [-b bits] [-s msps] <port1:freq1> ...\n", argv[0]);
+                return 1;
+        }
+    }
+
+    if (optind >= argc) {
+        fprintf(stderr, "Nutzung: %s [-b bits] [-s msps] <port1:freq1> <port2:freq2> ...\n", argv[0]);
+        fprintf(stderr, "Optionen:\n");
+        fprintf(stderr, "  -b <bits> : 8 (Default), 10, 12, 14, 16 Bit Skalierung\n");
+        fprintf(stderr, "  -s <msps> : Ausgangs-Samplerate in MSPS (5, 10 (Default), 12.5, 25)\n");
+        fprintf(stderr, "Beispiele:\n");
+        fprintf(stderr, "  Default : %s 1234:603000 1235:828000\n", argv[0]);
+        fprintf(stderr, "  Erweitert: %s -b 16 -s 25.0 1234:603000 1235:828000\n", argv[0]);
         return 1;
     }
 
@@ -106,13 +126,30 @@ int main(int argc, char *argv[]) {
         sine_lut[i] = (int16_t)(round(sin(2.0 * M_PI * i / LUT_SIZE) * 32767.0));
     }
 
-    int num_transmitters = argc - 1;
+    int num_transmitters = argc - optind;
     Channel *channels = calloc(num_transmitters, sizeof(Channel));
     if (!channels) { perror("calloc"); return 1; }
 
+    // Raten und Upsampling berechnen (Rückwärtskompatibilität gewährleisten)
+    uint32_t current_inter_rate;
+    uint32_t current_upsample;
+    int out_multiplier;
+
+    if (sample_rate_msps == 10.0f) {
+        // Exaktes Original-Verhalten: 2.5 MSPS NCO Rate, Upsampling 100, Faktor 4 Verdopplung am Ausgang
+        current_inter_rate = (uint32_t)INTER_RATE;
+        current_upsample = UPSAMPLE_FAC;
+        out_multiplier = 4;
+    } else {
+        // Direkte NCO-Taktung auf Ziel-Samplerate (5, 12.5, 25)
+        current_inter_rate = (uint32_t)(sample_rate_msps * 1000000.0f);
+        current_upsample = current_inter_rate / 25000; // z.B. 25M / 25k = 1000
+        out_multiplier = 1;
+    }
+
     for (int i = 0; i < num_transmitters; i++) {
         // Parsing "Port:Frequenz"
-        char *arg_copy = strdup(argv[i+1]);
+        char *arg_copy = strdup(argv[optind + i]);
         char *p_str = strtok(arg_copy, ":");
         char *f_str = strtok(NULL, ":");
         
@@ -131,7 +168,7 @@ int main(int argc, char *argv[]) {
         channels[i].peak_hold = 0.1f;
         
         // Integer NCO Phase Increment berechnen: (Freq / Samplerate) * 2^32
-        double fraction = channels[i].freq / INTER_RATE;
+        double fraction = channels[i].freq / (double)current_inter_rate;
         channels[i].phase_inc = (uint32_t)(fraction * 4294967296.0);
         channels[i].phase = 0;
 
@@ -146,20 +183,27 @@ int main(int argc, char *argv[]) {
 
     // TCP Setup für fl2k_tcp
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-    int opt = 1; setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    int opt_sock = 1; setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt_sock, sizeof(opt_sock));
     struct sockaddr_in s_addr = { .sin_family=AF_INET, .sin_port=htons(12345), .sin_addr.s_addr=INADDR_ANY };
     bind(listen_fd, (struct sockaddr *)&s_addr, sizeof(s_addr));
     listen(listen_fd, 1);
     
-    printf("Warte auf fl2k_tcp (10MSPS) an Port 12345...\n");
+    printf("Warte auf SDR (%g MSPS, %d Bit) an Port 12345...\n", sample_rate_msps, bit_depth);
     int client_fd = accept(listen_fd, NULL, NULL);
 
-    uint8_t dac_out[AUDIO_CHUNK * UPSAMPLE_FAC * 4]; // 200.000 Bytes pro Block
+    // Dynamischer Puffer: 500 (Audio) * 1000 (Max Upsample für 25 MSPS) * 4 (Max Multiplikator) * 2 (Bytes für 16-Bit)
+    size_t dac_max_samples = AUDIO_CHUNK * 1000 * 4;
+    uint8_t *dac_out = malloc(dac_max_samples * 2);
+
     int debug_counter = 0;
     
     // Skalierungsfaktor für den DAC. Verhindert Übersteuerung bei der Summierung.
     // Ein höherer Wert macht das Gesamtsignal leiser.
     int32_t dac_divisor = 230 * num_transmitters; 
+    
+    // Hard-Limiter Grenzen dynamisch nach Bittiefe berechnen
+    int32_t max_val = (1 << (bit_depth - 1)) - 1;
+    int32_t min_val = -(1 << (bit_depth - 1));
 
     while(1) {
         // ====================================================================
@@ -203,7 +247,6 @@ int main(int argc, char *argv[]) {
             }
 
             // Berechne vorberechneten Gain-Faktor für Integer-Mathe (inkl. Mod-Index Skalierung 0.7)
-            // Faktor 89.6 entspricht (16384 * 0.7) / 128
             channels[i].total_gain_int = (int32_t)(channels[i].gain * channels[i].external_gain * 89.6f);
             channels[i].carrier_base_int = (int32_t)(16384.0f * channels[i].external_gain);
         }
@@ -211,26 +254,26 @@ int main(int argc, char *argv[]) {
         // ====================================================================
         // SCHNELLE SCHLEIFE (RF RATE) - Sample & Hold Architektur
         // ====================================================================
-        unsigned int out_idx = 0;
+        unsigned int out_idx = 0; // Zählt Samples, nicht Bytes
+        int32_t dac_min_int = 32767, dac_max_int = -32768;
         
         for (int a = 0; a < AUDIO_CHUNK; a++) {
             
             // Modulationsregister updaten
             for (int i = 0; i < num_transmitters; i++) {
-                // Basis-Trägeramplitude ist 16384. Dazu addieren wir das skalierte Audio-Signal.
-                //channels[i].mod_register = 16384 + (channels[i].audio_buf[a] * channels[i].total_gain_int);
+                // Basis-Trägeramplitude. Dazu addieren wir das skalierte Audio-Signal.
                 channels[i].mod_register = channels[i].carrier_base_int + (channels[i].audio_buf[a] * channels[i].total_gain_int);
             }
 
-            // 2. Das Modulationsregister für den Upsampling-Faktor (100x) halten
-            for (int u = 0; u < UPSAMPLE_FAC; u++) {
+            // 2. Das Modulationsregister für den Upsampling-Faktor halten
+            for (int u = 0; u < current_upsample; u++) {
                 int32_t mix = 0;
                 
                 for (int i = 0; i < num_transmitters; i++) {
                     // NCO Schritt
                     channels[i].phase += channels[i].phase_inc;
                     
-                    // Träger aus LUT holen (Die oberen 12 Bit der Phase als Index)
+                    // Träger aus LUT holen
                     int32_t carrier = sine_lut[channels[i].phase >> (32 - LUT_BITS)];
                     
                     // Amplituden-Modulation: Träger * (Basis + Audio)
@@ -240,23 +283,38 @@ int main(int argc, char *argv[]) {
                     mix += modulated;
                 }
                 
-                // 32-Bit Mix auf 8-Bit DAC Bereich (-128 bis 127) skalieren
-                int32_t dac_val = mix / dac_divisor;
+                // Dynamische Skalierung basierend auf gewählter Bittiefe
+                int32_t dac_val;
+                if (bit_depth == 8) {
+                    dac_val = mix / dac_divisor; // Originales Verhalten
+                } else {
+                    // Hochskalieren ohne Overflow (int64_t Cast), dann teilen.
+                    // Erhält die Dynamik über den vollen Aussteuerungsbereich.
+                    dac_val = (int32_t)(((int64_t)mix * (1 << (bit_depth - 8))) / dac_divisor);
+                }
 
                 // Hard Limiters
-                if (dac_val > 127) dac_val = 127;
-                if (dac_val < -128) dac_val = -128;
+                if (dac_val > max_val) dac_val = max_val;
+                if (dac_val < min_val) dac_val = min_val;
                 
-                // Ausgabe auf 10 MSPS upsamplen (Kopieren des 2.5 MHz Samples)
-                for (int k = 0; k < 4; k++) {
-                    dac_out[out_idx++] = (uint8_t)(int8_t)dac_val;
+                if (dac_val < dac_min_int) dac_min_int = dac_val;
+                if (dac_val > dac_max_int) dac_max_int = dac_val;
+
+                // Ausgabe (1x für neue Raten, 4x für alte 10 MSPS Rückwärtskompatibilität)
+                for (int k = 0; k < out_multiplier; k++) {
+                    if (bit_depth == 8) {
+                        ((int8_t*)dac_out)[out_idx++] = (int8_t)dac_val;
+                    } else {
+                        // Alles über 8 Bit geht strikt als 16-Bit Sample raus
+                        ((int16_t*)dac_out)[out_idx++] = (int16_t)dac_val;
+                    }
                 }
             }
         }
 
         // Debug & Stats
         if (++debug_counter > 25) {
-            printf("\033[H\033[J--- AM 32-BIT INTEGER MODULATOR (%d Kanäle) ---\n", num_transmitters);
+            printf("\033[H\033[J--- AM 32-BIT INT-MODULATOR (%d Kanäle) ---\n", num_transmitters);
             for(int i=0; i < num_transmitters; i++) {
                 float mod_val = (fabsf(channels[i].last_min_in) > channels[i].last_max_in) ? 
                                  fabsf(channels[i].last_min_in) : channels[i].last_max_in;
@@ -265,11 +323,16 @@ int main(int argc, char *argv[]) {
             }
             printf("----------------------------------------------------\n");
             printf("Processing-Model: Sample & Hold, 32-Bit Integer NCO/Mix\n");
+            printf("Sampling: %g MSPS | Ausgabe: %d Bit (%s)\n", sample_rate_msps, bit_depth, bit_depth > 8 ? "int16_t" : "int8_t");
+            printf("DAC Out (Signed): %6d / %6d (Safe: %d bis %d)\n", dac_min_int, dac_max_int, min_val, max_val);
             debug_counter = 0;
         }
 
-        // Streaming an Port 12345 (200.000 Bytes)
-        send(client_fd, dac_out, out_idx, 0);
+        // Bytes für send() berechnen (out_idx = Anzahl der Samples. Bei > 8 Bit = 2 Bytes/Sample)
+        size_t bytes_to_send = out_idx * (bit_depth > 8 ? 2 : 1);
+        send(client_fd, dac_out, bytes_to_send, 0);
     }
+    
+    free(dac_out);
     return 0;
 }
