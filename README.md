@@ -20,6 +20,8 @@ RF out is fixed on port 12345 with 10 MSPS and can be transmitted using fl2k_tcp
 
 `fl2k_tcp -a 127.0.0.1 -p 12345 -s 10000000`
 
+#### Attention: Variable rf bit-resolution (10, 12, 14, 16 bit) and sample rates (5, 10, 12.5, 25 MSPS) for other SDR transmitters are only available in the INT32 DSP version. If you prefer the way-faster 32-bit integer math version, simply call `./build_modulators_int.sh` .
+
 Audio modulation signal can be created with programs like ffmpeg:
 
 `ffmpeg -re -i URL_station_1  -af "lowpass=f=4500, volume=0.8, acompressor=threshold=-10dB:ratio=4"   -f u8 -ar 25000 -ac 1 udp://127.0.0.1:1234 &`
@@ -43,7 +45,7 @@ Multiple complete configured broadcasting landscapes can be mapped as a CSV file
 
 ![UI4](https://github.com/radiolab81/AMWaveSynth/blob/main/www/modulator_debug.jpg "Logo Title Text 1")
 
-Audio source gain (AGC controlled) and RF-DAC saturation is visible in the modulator console during transmission. The modulator can be easily switched to 16-bit audio and 10-16 bit wide RF-DACs. This would easily enable transmissions via STEMLab, Adalm2000, and other DACs (R2R ladder) or to the smisdr project (https://github.com/radiolab81/smisdr)
+Audio source gain (AGC controlled) and RF-DAC saturation is visible in the modulator console during transmission. The modulator can be easily switched to 16-bit audio and 10-16 bit wide RF-DACs (see INT32-DSP version). This would easily enable transmissions via STEMLab, Adalm2000, and other DACs (R2R ladder) or to the smisdr project (https://github.com/radiolab81/smisdr)
 
 ## Benchmarks 
 
@@ -54,7 +56,7 @@ Audio source gain (AGC controlled) and RF-DAC saturation is visible in the modul
 | Core2Duo/8GB  | 8-10 live stations | 5-6 live stations |
 | Core3i 1st gen/4GB| 11-13 live stations  |  8-10 live stations |
 
-Update: In addition to the liquid-dsp version, there is now a 2.5/5 MSPS version that primarily works with 32-bit integers, providing a significant boost in terms of the number of radio stations that can be created, even on older CPUs !
+Update: In addition to the liquid-dsp version, there is now a 2.5/5 MSPS version that primarily works with 32-bit integers, providing a significant boost in terms of the number of radio stations that can be created, even on older CPUs ! This version also supports various sampling rates and bit resolutions.
 
 ### (just 32bit Integer - version): `./build_modulators_int.sh`
 | CPU/RAM       | 2.5MSPS LW/lower BC band | 5MSPS full 2.5MHz rf spectrum  |
@@ -111,6 +113,5 @@ cd amtxgui
 chmod +x *.sh
 ```
 If you prefer the way-faster 32-bit integer math version, simply call `./build_modulators_int.sh` .
-
 
 #### FAQ: - if modulator process terminates with an illegal machine instruction on your CPU, you must build liquiddsp with the option cmake -DENABLE_SIMD=OFF in the build_liquiddsp.sh 
