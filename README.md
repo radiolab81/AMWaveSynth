@@ -99,7 +99,7 @@ Should you require root privileges to run programs like fl2k_, create the necess
 ```console
 #!/bin/bash
 sudo apt update
-sudo apt install build-essential cmake git libusb-1.* bc python3-tk xterm ffmpeg
+sudo apt install build-essential cmake git libusb-1.* bc python3-tk xterm ffmpeg socat
 git clone https://github.com/radiolab81/AMWaveSynth
 cd AMWaveSynth/libs
 chmod +x *.sh
