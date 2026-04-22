@@ -4,6 +4,9 @@ echo "--- MULTI-SENDER START ---"
 # ************ SDR Settings ******************
 SDR_DAC_BITS=8
 SDR_SAMPLERATE=10.0
+SDR_IP="127.0.0.1"
+SDR_PORT=1234
+SDR_REMOTE_FL2k=false
 # ************ SDR Settings ******************
 
 MOD_ARGS=""
@@ -52,6 +55,22 @@ else
         echo "Alle Frequenzen <= 1250. Starte Modulator: ./am_modulator $MOD_ARGS"
         ./am_modulator $MOD_ARGS &
     fi
+fi
+
+
+if [ "$SDR_IP" != "127.0.0.1" ]; then
+    echo "Starte socat Brücke: localhost:12345 -> $SDR_IP:$SDR_PORT"
+    
+    if [ "$SDR_REMOTE_FL2k" = true ]; then
+       # Startet die Brücke SERVER -> [CLIENT -> socat -> SERVER] -> CLIENT im Hintergrund
+       socat TCP4:localhost:12345,nodelay TCP4-LISTEN:1234,reuseaddr,nodelay &
+    else
+       # Startet die Brücke SERVER -> [CLIENT -> socat -> CLIENT] -> SERVER im Hintergrund
+       # 'forever' sorgt dafür, dass socat bei Verbindungsabbruch neu versucht
+       socat -u TCP4:localhost:12345,nodelay TCP4:$SDR_IP:$SDR_PORT,nodelay &
+    fi
+    
+    SOCAT_PID=$!
 fi
 
 echo "--------------------------"
