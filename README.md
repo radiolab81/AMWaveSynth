@@ -90,6 +90,7 @@ bc          (for amtxgui)
 
 python3-tk  (for amtxgui)
 
+socat (for remote sdrs)
 
 liquiddsp and osmo-fl2k (are already in the lib directory and can be built with the associated scripts)
 
@@ -108,10 +109,10 @@ sudo ./build_liquiddsp.sh
 sudo ldconfig
 cd ..
 chmod +x *.sh
-./build_modulators.sh
+./build_modulators_int.sh
 cd amtxgui
 chmod +x *.sh
 ```
-If you prefer the way-faster 32-bit integer math version, simply call `./build_modulators_int.sh` .
+This will build the modulator in fast INT32-DSP Mode, if you prefer liquid-dsp version, simply call `./build_modulators.sh` .
 
 #### FAQ: - if modulator process terminates with an illegal machine instruction on your CPU, you must build liquiddsp with the option cmake -DENABLE_SIMD=OFF in the build_liquiddsp.sh 
