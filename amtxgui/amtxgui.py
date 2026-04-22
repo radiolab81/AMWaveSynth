@@ -8,7 +8,7 @@ LANGUAGES = {
         "win_title": "AM Transmission Multi-Stream Control",
         "col_freq": "Frequenz", "col_bw": "Bandbreite", "col_name": "Programmname", "col_url": "URL",
         "btn_start": "ALLE Sender STARTEN", "btn_stop": "ALLE Sender STOPPEN",
-        "status_label": "Modulator Status (fl2k_tcp):",
+        "status_label": "Modulator Status (fl2k_tcp or ext.SDR):",
         "menu_file": "Datei", "menu_load": "Laden", "menu_save": "Speichern",
         "menu_sender": "Sender", "menu_add": "Hinzufügen", "menu_del": "Entfernen",
         "menu_lang": "Sprache", "dlg_title": "Sender-Parameter",
@@ -20,7 +20,7 @@ LANGUAGES = {
         "win_title": "AM Transmission Multi-Stream Control",
         "col_freq": "Frequency", "col_bw": "Bandwidth", "col_name": "Program Name", "col_url": "URL",
         "btn_start": "START ALL STATIONS", "btn_stop": "STOP ALL STATIONS",
-        "status_label": "Modulator Status (fl2k_tcp):",
+        "status_label": "Modulator Status (fl2k_tcp or ext.SDR):",
         "menu_file": "File", "menu_load": "Load", "menu_save": "Save",
         "menu_sender": "Station", "menu_add": "Add", "menu_del": "Remove",
         "menu_lang": "Language", "dlg_title": "Station Parameters",
@@ -32,7 +32,7 @@ LANGUAGES = {
         "win_title": "AM Transmission Multi-Stream Control",
         "col_freq": "Fréquence", "col_bw": "Bande passante", "col_name": "Nom du programme", "col_url": "URL",
         "btn_start": "DÉMARRER TOUS LES ÉMETTEURS", "btn_stop": "ARRÊTER TOUS LES ÉMETTEURS",
-        "status_label": "Statut du modulateur (fl2k_tcp) :",
+        "status_label": "Statut du modulateur (fl2k_tcp or ext.SDR) :",
         "menu_file": "Fichier", "menu_load": "Charger", "menu_save": "Enregistrer",
         "menu_sender": "Émetteur", "menu_add": "Ajouter", "menu_del": "Supprimer",
         "menu_lang": "Langue", "dlg_title": "Paramètres de l'émetteur",
@@ -44,7 +44,7 @@ LANGUAGES = {
         "win_title": "AM Transmission Multi-Stream Control",
         "col_freq": "Frequenza", "col_bw": "Larghezza di banda", "col_name": "Nome programma", "col_url": "URL",
         "btn_start": "AVVIA TUTTE LE STAZIONI", "btn_stop": "FERMA TUTTE LE STAZIONI",
-        "status_label": "Stato modulatore (fl2k_tcp):",
+        "status_label": "Stato modulatore (fl2k_tcp or ext.SDR):",
         "menu_file": "File", "menu_load": "Carica", "menu_save": "Salva",
         "menu_sender": "Stazione", "menu_add": "Aggiungi", "menu_del": "Rimuovi",
         "menu_lang": "Lingua", "dlg_title": "Parametri della stazione",
@@ -202,7 +202,7 @@ class RadioApp:
 
     def check_status(self):
         try:
-            result = subprocess.run(["pgrep", "fl2k_tcp"], capture_output=True)
+            result = subprocess.run(["pgrep", "fl2k_tcp|socat"], capture_output=True)
             color = "lime" if result.returncode == 0 else "red"
             self.ampel.itemconfig(self.ampel_light, fill=color)
         except:
