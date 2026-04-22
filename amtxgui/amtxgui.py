@@ -67,14 +67,14 @@ LANGUAGES = {
 }
 
 class SenderDialog(tk.Toplevel):
-    def __init__(self, parent, station_db, existing_frequencies, lang_code="DE"):
+    def __init__(self, parent, station_db, existing_frequencies, lang_code="DE", initial_values=None):
         super().__init__(parent)
         self.lang = LANGUAGES[lang_code]
         self.title(self.lang["dlg_title"])
         self.geometry("480x230")
         self.station_db, self.existing_frequencies = station_db, existing_frequencies
         self.result = None
-        self.transient(parent); self.grab_set()
+        self.transient(parent); self.wait_visibility(); self.grab_set()
 
         self.plans = {
             "Europa (9 kHz Raster)": [f"{f} kHz" for f in range(153, 280, 9)] + [f"{f} kHz" for f in range(531, 1603, 9)],
@@ -104,6 +104,15 @@ class SenderDialog(tk.Toplevel):
             w.grid(row=i, column=1, padx=10, pady=5); self.widgets[key] = w
 
         self.update_freq_list()
+
+        if initial_values:
+            self.widgets['plan'].set("Manuelle Eingabe") # Verhindert das Überschreiben der Combobox
+            self.widgets['freq'].set(initial_values[0])
+            self.widgets['bw'].set(initial_values[1])
+            self.widgets['name'].set(initial_values[2])
+            self.widgets['url'].delete(0, tk.END)
+            self.widgets['url'].insert(0, initial_values[3])
+
         tk.Button(self, text=self.lang["dlg_btn"], command=self.confirm, bg="#d5e8d4").grid(row=5, column=0, columnspan=2, pady=20)
 
     def update_freq_list(self, e=None):
@@ -133,6 +142,9 @@ class RadioApp:
         # Tabelle
         self.tree = ttk.Treeview(root, show='headings')
         self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Erweiterung: Doppelklick-Binding zum Bearbeiten
+        self.tree.bind("<Double-1>", self.edit_entry)
 
         # Button & Ampel Panel
         btn_panel = tk.Frame(root)
@@ -230,6 +242,27 @@ class RadioApp:
             self.tree.insert("", tk.END, values=d.result)
             items = [(float(self.clean(self.tree.set(k, "Frequenz"))), k) for k in self.tree.get_children()]
             items.sort(); [self.tree.move(k, '', i) for i, (v, k) in enumerate(items)]
+
+    def edit_entry(self, event=None):
+        selected = self.tree.selection()
+        if not selected: return
+        
+        item_id = selected[0]
+        current_values = self.tree.item(item_id, 'values')
+        
+        # Alle existierenden Frequenzen holen, ABER die des aktuellen Eintrags ignorieren
+        exist = [str(self.tree.set(k, "Frequenz")) for k in self.tree.get_children() if k != item_id]
+        
+        # Dialog mit aktuellen Werten öffnen
+        d = SenderDialog(self.root, self.station_db, exist, self.current_lang, initial_values=current_values)
+        self.root.wait_window(d)
+        
+        # Falls bestätigt wurde, Daten überschreiben und neu sortieren
+        if d.result:
+            self.tree.item(item_id, values=d.result)
+            items = [(float(self.clean(self.tree.set(k, "Frequenz"))), k) for k in self.tree.get_children()]
+            items.sort()
+            [self.tree.move(k, '', i) for i, (v, k) in enumerate(items)]
 
     def delete_entry(self):
         for i in self.tree.selection(): self.tree.delete(i)
