@@ -89,25 +89,43 @@ class SenderDialog : public Fl_Double_Window {
     std::map<std::string, std::string> db; std::vector<std::string> exist; const LangSet& L;
 public:
     bool is_confirmed() const { return confirmed; } 
-    SenderDialog(const LangSet& lang, const std::map<std::string, std::string>& station_db, std::vector<std::string> existing) 
+
+    SenderDialog(const LangSet& lang, const std::map<std::string, std::string>& station_db, std::vector<std::string> existing, Station* edit_data = nullptr) 
         : Fl_Double_Window(480, 250, lang.dlg_title.c_str()), db(station_db), exist(existing), L(lang) {
         set_modal();
         c_plan = new Fl_Choice(150, 10, 300, 25, L.dlg_plan.c_str());
         const char* p[]={"Europa (9 kHz Raster)","USA (10 kHz Raster)","CH HF-Telefonrundspruch","IT Filodiffusione (RAI)","Manuelle Eingabe"};
         for(auto x:p) c_plan->add(x); c_plan->callback(update_freq_cb, this);
+
         c_freq = new Fl_Input_Choice(150, 40, 300, 25, L.dlg_freq.c_str());
         c_bw = new Fl_Input_Choice(150, 70, 300, 25, L.dlg_bw.c_str());
         const char* bws[]={"4.5 kHz","5.0 kHz","6.0 kHz","7.0 kHz","9.0 kHz","10.0 kHz","12.0 kHz"};
         for(auto b:bws) c_bw->add(b); c_bw->value("4.5 kHz");
+
         c_name = new Fl_Input_Choice(150, 100, 300, 25, L.dlg_prog.c_str());
         for(auto const& [n,u]:db) c_name->add(n.c_str());
         c_name->callback([](Fl_Widget*, void* d){ 
             SenderDialog* o=(SenderDialog*)d; if(o->c_name->value()) o->i_url->value(o->db[o->c_name->value()].c_str());
         }, this);
+
         i_url = new Fl_Input(150, 130, 300, 25, L.dlg_url.c_str());
         Fl_Button* b = new Fl_Button(150, 180, 180, 40, L.dlg_btn.c_str());
-        b->callback(confirm_cb, this); c_plan->value(0); update_freq_cb(NULL, this); end();
+        b->callback(confirm_cb, this); 
+        c_plan->value(0); 
+        update_freq_cb(NULL, this); 
+
+        // bestehende Eintraege editieren
+        if (edit_data) {
+            c_plan->value(4); // Manuelle Eingabe
+            c_freq->value(edit_data->freq.c_str());
+            c_bw->value(edit_data->bw.c_str());
+            c_name->value(edit_data->name.c_str());
+            i_url->value(edit_data->url.c_str());
+        }
+
+        end();
     }
+
     static void update_freq_cb(Fl_Widget*, void* d) {
         SenderDialog* o=(SenderDialog*)d; o->c_freq->clear(); int v=o->c_plan->value();
         if(v==0){ for(int f=153;f<=279;f+=9)o->c_freq->add((std::to_string(f)+" kHz").c_str()); for(int f=531;f<=1602;f+=9)o->c_freq->add((std::to_string(f)+" kHz").c_str()); }
@@ -116,6 +134,7 @@ public:
         else if(v==3){ const char* f[]={"178 kHz","211 kHz","244 kHz","277 kHz","310 kHz","343 kHz"}; for(auto x:f)o->c_freq->add(x); }
         if(v==4) o->c_freq->value(""); else if(o->c_freq->menubutton()->size()>0) o->c_freq->value(o->c_freq->menubutton()->text(0));
     }
+
     static void confirm_cb(Fl_Widget*, void* d) {
         SenderDialog* o=(SenderDialog*)d; std::string cur_f = o->c_freq->value() ? o->c_freq->value() : "";
         for(auto &e:o->exist) { if(clean_str(e) == clean_str(cur_f)) { fl_alert("%s", o->L.err_freq.c_str()); return; } }
@@ -134,12 +153,50 @@ public:
         win = new Fl_Double_Window(950, 480);
         menu = new Fl_Menu_Bar(0, 0, 950, 30);
         table = new StationTable(10, 40, 930, 350);
+
+        // Callback für Tabelle hinzufügen (für Doppelklick)
+        table->callback(table_cb, this);
+        table->when(FL_WHEN_RELEASE);
+
         btn_start = new Fl_Button(10, 410, 230, 50); btn_start->callback(start_all_cb, this); btn_start->color(0x90ee9000);
         btn_stop = new Fl_Button(250, 410, 230, 50); btn_stop->callback(stop_all_cb, this); btn_stop->color(0xffcccb00);
         lbl_status = new Fl_Box(500, 420, 300, 30); lbl_status->align(FL_ALIGN_RIGHT|FL_ALIGN_INSIDE);
         ampel = new StatusLight(810, 420, 30, 30); ampel->color(FL_RED);
         load_stations_db(); update_ui(); win->end(); win->show();
         Fl::add_timeout(1.0, check_status, this);
+    }
+
+    //  Callback für Tabellen-Events (Doppelklick Erkennung) ---
+    static void table_cb(Fl_Widget* w, void* d) {
+        RadioApp* a = (RadioApp*)d;
+        if (Fl::event_clicks() > 0) { // Erkennt Doppelklick
+            Fl::event_clicks(0); // Klicks zurücksetzen
+            int R = a->table->callback_row();
+            if (R >= 0 && R < (int)a->table->data.size()) {
+                a->edit_entry(R);
+            }
+        }
+    }
+
+    void edit_entry(int row) {
+        std::vector<std::string> ex; 
+        // Andere Frequenzen sammeln (außer der eigenen der aktuellen Zeile)
+        for(int i=0; i<(int)table->data.size(); i++) {
+            if(i != row) ex.push_back(table->data[i].freq);
+        }
+        
+        SenderDialog dlg(LANGUAGES[current_lang], station_db, ex, &table->data[row]);
+        dlg.show();
+        while(dlg.shown()) Fl::wait();
+        
+        if(dlg.is_confirmed()){
+            table->data[row] = dlg.get_result();
+            // Neu sortieren
+            std::sort(table->data.begin(), table->data.end(), [](const Station& a, const Station& b){
+                return std::stod(clean_str(a.freq)) < std::stod(clean_str(b.freq));
+            });
+            table->redraw();
+        }
     }
 
     void load_stations_db() {
@@ -174,9 +231,15 @@ public:
     }
 
     static void add_cb(Fl_Widget*, void* d) {
-        RadioApp* a=(RadioApp*)d; std::vector<std::string> ex; for(auto &s:a->table->data) ex.push_back(s.freq);
-        SenderDialog dlg(LANGUAGES[a->current_lang], a->station_db, ex);
-        dlg.show(); while(dlg.shown()) Fl::wait();
+        RadioApp* a=(RadioApp*)d; 
+        std::vector<std::string> ex; 
+        for(auto &s:a->table->data) ex.push_back(s.freq);
+
+        SenderDialog dlg(LANGUAGES[a->current_lang], a->station_db, ex, nullptr);
+
+        dlg.show(); 
+        while(dlg.shown()) Fl::wait();
+
         if(dlg.is_confirmed()){ 
             a->table->data.push_back(dlg.get_result()); 
             std::sort(a->table->data.begin(), a->table->data.end(), [](const Station& a, const Station& b){
