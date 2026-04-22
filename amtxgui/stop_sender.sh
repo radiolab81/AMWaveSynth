@@ -4,3 +4,4 @@
 killall ffmpeg
 killall am_modulator
 killall am_modulator_5MSPS
+killall socat
