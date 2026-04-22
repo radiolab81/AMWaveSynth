@@ -20,7 +20,7 @@ RF out is fixed on port 12345 with 10 MSPS and can be transmitted using fl2k_tcp
 
 `fl2k_tcp -a 127.0.0.1 -p 12345 -s 10000000`
 
-#### Attention: Variable rf bit-resolution (10, 12, 14, 16 bit) and sample rates (5, 10, 12.5, 25 MSPS) for other SDR transmitters are only available in the INT32 DSP version. If you prefer the way-faster 32-bit integer math version, simply call `./build_modulators_int.sh` .
+#### Attention: Variable rf bit-resolution (10, 12, 14, 16 bit) and sample rates (5, 10, 12.5, 25 MSPS) for other SDR transmitters are only available in the INT32 DSP version. If you prefer the way-faster 32-bit integer math version, simply call `./build_modulators_int.sh` and set USE_INT32_MATH_VERSION=true in start_senders.sh .
 
 Audio modulation signal can be created with programs like ffmpeg:
 
