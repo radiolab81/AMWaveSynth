@@ -46,11 +46,11 @@ std::string clean_str(std::string v) {
 }
 
 std::map<std::string, LangSet> LANGUAGES = {
-    {"DE", {"AM Transmission Multi-Stream Control", "Frequenz", "Bandbreite", "Programmname", "URL", "ALLE Sender STARTEN", "ALLE Sender STOPPEN", "Modulator Status (fl2k_tcp):", "Datei", "Laden", "Speichern", "Sender", "Hinzufügen", "Entfernen", "Sprache", "Sender-Parameter", "Frequenzplan:", "Frequenz:", "Audiobandbreite:", "Programm wählen:", "Programm-URL:", "Hinzufügen", "Frequenz belegt!", "Fehler"}},
-    {"EN", {"AM Transmission Multi-Stream Control", "Frequency", "Bandwidth", "Program Name", "URL", "START ALL STATIONS", "STOP ALL STATIONS", "Modulator Status (fl2k_tcp):", "File", "Load", "Save", "Station", "Add", "Remove", "Language", "Station Parameters", "Frequency Plan:", "Frequency:", "Audio Bandwidth:", "Select Program:", "Program URL:", "Add", "Frequency occupied!", "Error"}},
-    {"FR", {"AM Transmission Multi-Stream Control", "Fréquence", "Bande passante", "Nom du programme", "URL", "DÉMARRER TOUS LES ÉMETTEURS", "ARRÊTER TOUS LES ÉMETTEURS", "Statut du modulateur (fl2k_tcp) :", "Fichier", "Charger", "Enregistrer", "Émetteur", "Ajouter", "Supprimer", "Langue", "Paramètres de l'émetteur", "Plan de fréquences :", "Fréquence :", "Bande passante audio :", "Choisir le programme :", "URL du programme :", "Ajouter", "Fréquence occupée !", "Erreur"}},
-    {"IT", {"AM Transmission Multi-Stream Control", "Frequenza", "Larghezza di banda", "Nome programma", "URL", "AVVIA TUTTE LE STAZIONI", "FERMA TUTTE LE STAZIONI", "Stato modulatore (fl2k_tcp):", "File", "Carica", "Salva", "Stazione", "Aggiungi", "Rimuovi", "Lingua", "Parametri della stazione", "Piano di frequenza:", "Frequenza:", "Larghezza di banda audio:", "Seleziona programma:", "URL del programma:", "Aggiungi", "Frequenza occupata!", "Errore"}},
-    {"JA", {"AMマルチストリーム送信制御", "周波数", "帯域幅", "番組名", "URL", "全送信機を開始", "全送信機を停止", "変調器ステータス (fl2k_tcp):", "ファイル", "読み込み", "保存", "送信局", "追加", "削除", "言語 (Language)", "送信パラメータ", "周波数プラン:", "周波数:", "音声帯域幅:", "番組を選択:", "番組URL:", "追加", "周波数が重複しています！", "エラー"}}
+    {"DE", {"AM Transmission Multi-Stream Control", "Frequenz", "Bandbreite", "Programmname", "URL", "ALLE Sender STARTEN", "ALLE Sender STOPPEN", "Modulator Status (fl2k_tcp or ext.SDR):", "Datei", "Laden", "Speichern", "Sender", "Hinzufügen", "Entfernen", "Sprache", "Sender-Parameter", "Frequenzplan:", "Frequenz:", "Audiobandbreite:", "Programm wählen:", "Programm-URL:", "Hinzufügen", "Frequenz belegt!", "Fehler"}},
+    {"EN", {"AM Transmission Multi-Stream Control", "Frequency", "Bandwidth", "Program Name", "URL", "START ALL STATIONS", "STOP ALL STATIONS", "Modulator Status (fl2k_tcp or ext.SDR):", "File", "Load", "Save", "Station", "Add", "Remove", "Language", "Station Parameters", "Frequency Plan:", "Frequency:", "Audio Bandwidth:", "Select Program:", "Program URL:", "Add", "Frequency occupied!", "Error"}},
+    {"FR", {"AM Transmission Multi-Stream Control", "Fréquence", "Bande passante", "Nom du programme", "URL", "DÉMARRER TOUS LES ÉMETTEURS", "ARRÊTER TOUS LES ÉMETTEURS", "Statut du modulateur (fl2k_tcp or ext.SDR) :", "Fichier", "Charger", "Enregistrer", "Émetteur", "Ajouter", "Supprimer", "Langue", "Paramètres de l'émetteur", "Plan de fréquences :", "Fréquence :", "Bande passante audio :", "Choisir le programme :", "URL du programme :", "Ajouter", "Fréquence occupée !", "Erreur"}},
+    {"IT", {"AM Transmission Multi-Stream Control", "Frequenza", "Larghezza di banda", "Nome programma", "URL", "AVVIA TUTTE LE STAZIONI", "FERMA TUTTE LE STAZIONI", "Stato modulatore (fl2k_tcp or ext.SDR):", "File", "Carica", "Salva", "Stazione", "Aggiungi", "Rimuovi", "Lingua", "Parametri della stazione", "Piano di frequenza:", "Frequenza:", "Larghezza di banda audio:", "Seleziona programma:", "URL del programma:", "Aggiungi", "Frequenza occupata!", "Errore"}},
+    {"JA", {"AMマルチストリーム送信制御", "周波数", "帯域幅", "番組名", "URL", "全送信機を開始", "全送信機を停止", "変調器ステータス (fl2k_tcp or ext.SDR):", "ファイル", "読み込み", "保存", "送信局", "追加", "削除", "言語 (Language)", "送信パラメータ", "周波数プラン:", "周波数:", "音声帯域幅:", "番組を選択:", "番組URL:", "追加", "周波数が重複しています！", "エラー"}}
 };
 
 class StatusLight : public Fl_Box {
@@ -165,7 +165,7 @@ public:
     }
 
     static void check_status(void* d) {
-        RadioApp* a=(RadioApp*)d; int r=std::system("pgrep fl2k_tcp >/dev/null 2>&1");
+        RadioApp* a=(RadioApp*)d; int r = std::system("pidof fl2k_tcp >/dev/null 2>&1 || pidof socat >/dev/null 2>&1");
         int ec = WEXITSTATUS(r);
         if(r==-1) a->ampel->color(fl_rgb_color(128,128,128)); 
         else if(ec==0) a->ampel->color(fl_rgb_color(0,255,0)); 
@@ -204,7 +204,7 @@ public:
 
     static void load_csv_cb(Fl_Widget*, void* d) {
         RadioApp* a=(RadioApp*)d; Fl_Native_File_Chooser fnc; fnc.type(Fl_Native_File_Chooser::BROWSE_FILE);
-        fnc.filter("CSV Files\t*.csv"); if(fnc.show()==0){
+        fnc.filter("CSV Files (*.csv)\t*.csv"); if(fnc.show()==0){
             a->table->data.clear(); std::ifstream f(fnc.filename()); std::string l; std::getline(f,l);
             while(std::getline(f,l)){ trim_r(l); std::stringstream ss(l); std::string fq,bw,nm,ur; std::getline(ss,fq,';'); std::getline(ss,bw,';'); std::getline(ss,nm,';'); std::getline(ss,ur,';');
                 if(!fq.empty()) a->table->data.push_back({fq,bw,nm,ur}); 
