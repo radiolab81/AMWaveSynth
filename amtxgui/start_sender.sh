@@ -1,8 +1,14 @@
 #!/bin/bash
 echo "--- MULTI-SENDER START ---"
 
+# ************ SDR Settings ******************
+SDR_DAC_BITS=8
+SDR_SAMPLERATE=10.0
+# ************ SDR Settings ******************
+
 MOD_ARGS=""
-USE_5MSPS=false  # Status-Variable initialisieren
+USE_INT32_MATH_VERSION=false
+USE_5MSPS_VERSION=false  # Status-Variable initialisieren
 
 # Wir verarbeiten die Argumente in 4er-Blöcken (Freq, BW, URL, Port)
 while (( "$#" >= 4 )); do
@@ -13,7 +19,7 @@ while (( "$#" >= 4 )); do
     
     # Prüfung: Wenn eine Frequenz > 1250 ist, Flag auf true setzen
     if [ "$FREQ" -gt 1250 ]; then
-        USE_5MSPS=true
+        USE_5MSPS_VERSION=true
     fi
 
     echo "Starte ffmpeg Instanz: $FREQ kHz | BW: $BW kHz | Port: $PORT"
@@ -27,13 +33,25 @@ while (( "$#" >= 4 )); do
     shift 4 # Die nächsten 4 Parameter nehmen
 done
 
-# Entscheidung, welcher Modulator gestartet wird
-if [ "$USE_5MSPS" = true ]; then
-    echo "Frequenz > 1250 erkannt. Starte Modulator: ./am_modulator_5MSPS $MOD_ARGS"
-    ./am_modulator_5MSPS $MOD_ARGS &
+
+if [ "$USE_INT32_MATH_VERSION" = true ]; then
+    # Entscheidung, welcher Modulator gestartet wird
+    if [ "$USE_5MSPS_VERSION" = true ]; then
+        echo "Frequenz > 1250 erkannt. Starte Modulator: ./am_modulator_5MSPS $MOD_ARGS"
+        ./am_modulator_5MSPS -b $SDR_DAC_BITS -s $SDR_SAMPLERATE $MOD_ARGS &
+    else
+        echo "Alle Frequenzen <= 1250. Starte Modulator: ./am_modulator $MOD_ARGS"
+        ./am_modulator -b $SDR_DAC_BITS -s $SDR_SAMPLERATE $MOD_ARGS &
+    fi
 else
-    echo "Alle Frequenzen <= 1250. Starte Modulator: ./am_modulator $MOD_ARGS"
-    ./am_modulator $MOD_ARGS &
+    # Entscheidung, welcher Modulator gestartet wird
+    if [ "$USE_5MSPS_VERSION" = true ]; then
+        echo "Frequenz > 1250 erkannt. Starte Modulator: ./am_modulator_5MSPS $MOD_ARGS"
+        ./am_modulator_5MSPS $MOD_ARGS &
+    else
+        echo "Alle Frequenzen <= 1250. Starte Modulator: ./am_modulator $MOD_ARGS"
+        ./am_modulator $MOD_ARGS &
+    fi
 fi
 
 echo "--------------------------"
