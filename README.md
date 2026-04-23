@@ -6,13 +6,20 @@ The AMWaveSynth is an environment for generating multiple parallel running AM-mo
 
 The AMWaveSynth receives the modulation signal as PCM samples over UDP ports (1234 and above), the RF signal containing all radio stations is available as a data stream on port 12345 for further processing or transmission with an SDR transmitter such as the FL2K-device.
 
-There are two versions of the modulator as a console program: one for a medium (NCO) samplerate of 2.5 MSPS (mainly for supplying longwave radio and RF wirecast receivers (Biennophone/TD-HF/Filodiffusione), the lower medium wave range is also reached) and a 5-MSPS (NCO) version for the entire frequency range up to 2.5 MHz.
+There are two versions of the modulator as a console program: one for a medium NCO-samplerate of 2.5 MSPS (mainly for supplying longwave radio and RF wirecast receivers (Biennophone/TD-HF/Filodiffusione), the lower medium wave range is also reached) and a 5-MSPS NCO version for the entire frequency range up to 2.5 MHz.
 
 The modulator is used as follows:
 
-`Usage: ./am_modulator <port1:freq1> <port2:freq2> ...`
+```
+Nutzung: ./am_modulator [-b bits] [-s msps] <port1:freq1> <port2:freq2 ...
+Optionen:
+  -b <bits> : 8 (Default), 10, 12, 14, 16 Bit Skalierung
+  -s <msps> : Ausgangs-Samplerate in MSPS (5, 10 (Default), 12.5, 25)
+Beispiele:
+  Default : ./am_modulator 1234:603000 1235:828000
+  Erweitert: ./am_modulator -b 16 -s 25.0 1234:603000 1235:82800
+````
 
-`Example: ./am_modulator 1234:603000 1235:828000`
 
 Audiostream (8Bit,25kSPS) from port 1234 is AM modulated on 603kHz, a 2nd station with audio from port 1235 will be generated on 828 kHz....      
 
@@ -29,7 +36,7 @@ Audio modulation signal can be created with programs like ffmpeg:
 `ffmpeg -re -i URL station_2  -af "lowpass=f=4500, volume=0.8, acompressor=threshold=-10dB:ratio=4"   -f u8 -ar 25000 -ac 1 udp://127.0.0.1:1235 &`
 
 
-Additionally, there is a multilingual PythonTK user interface for controlling the entire transmission process. Transmitters can be configured by specifying the frequency, audio bandwidth, and playback source (local/remote URL).
+Additionally, there is a multilingual PythonTK user interface for controlling the entire transmission process. Radiostations can be configured by specifying the frequency, audio bandwidth, and playback source (local/remote URL).
 
 ![UI1](https://github.com/radiolab81/AMWaveSynth/blob/main/www/UI.jpg "Logo Title Text 1")
 
@@ -47,6 +54,15 @@ Multiple complete configured broadcasting landscapes can be mapped as a CSV file
 
 Audio source gain (AGC controlled) and RF-DAC saturation is visible in the modulator console during transmission. The modulator can be easily switched to 10-16 bit wide RF-DACs (see INT32-DSP version). This would easily enable transmissions via STEMLab, Adalm2000, and other DACs (R2R ladder) or to the smisdr project (https://github.com/radiolab81/smisdr)
 
+see start_sender.sh for configuration 
+```console
+# ************ SDR Settings ******************
+SDR_DAC_BITS=8
+SDR_SAMPLERATE=10.0
+SDR_IP="127.0.0.1"
+SDR_PORT=1234
+SDR_REMOTE_FL2k=false
+```
 ## Benchmarks 
 
 ### (liquid-dsp version):    `./build_modulators.sh`
