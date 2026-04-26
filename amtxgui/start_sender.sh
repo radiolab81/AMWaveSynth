@@ -58,7 +58,7 @@ else
 fi
 
 sleep 3
-if [ "$SDR_IP" != "127.0.0.1" ]; then
+if [[ "$SDR_IP" != "127.0.0.1" || "$SDR_PORT" != 1234 ]]; then
     echo "Starte socat Brücke: localhost:12345 -> $SDR_IP:$SDR_PORT"
     
     if [ "$SDR_REMOTE_FL2k" = true ]; then
