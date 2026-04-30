@@ -50,6 +50,17 @@ typedef struct {
     int port;
 } Channel;
 
+// --- SFERICS / BLITZ SIMULATION GLOBALS ---
+// Volatile für lock-freien Transfer zwischen UDP-Thread und RF-Loop
+volatile int32_t  sferics_trigger_amp = 0;   // Amplitude des Blitzes
+volatile int32_t  sferics_trigger_decay = 0; // Q15 Faktor für den Abfall
+
+// Struktur für den Sferics-Control-Thread
+typedef struct {
+    uint32_t inter_rate; // Wird benötigt, um die ms in Samples umzurechnen
+} SfericsControlData;
+
+
 // Thread für Audiosignale (UDP)
 void* audio_receiver(void* arg) {
     Channel *ch = (Channel*)arg;
@@ -89,6 +100,41 @@ void* control_receiver(void* arg) {
                         break;
                     }
                 }
+            }
+        }
+    }
+    return NULL;
+}
+
+// Thread für die Sferics (Port 8889)
+void* sferics_receiver(void* arg) {
+    SfericsControlData *scd = (SfericsControlData*)arg;
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    struct sockaddr_in addr = { .sin_family=AF_INET, .sin_port=htons(8889), .sin_addr.s_addr=INADDR_ANY };
+    bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+    
+    char buf[256];
+    while(1) {
+        ssize_t n = recv(sock, buf, sizeof(buf)-1, 0);
+        if (n > 0) {
+            buf[n] = '\0';
+            float amp_val, decay_ms;
+            // Format: Amplitude : Dauer in ms (z.B. "800:12.5")
+            if (sscanf(buf, "%f:%f", &amp_val, &decay_ms) == 2) {
+                // Berechne, wie viele Samples der Blitz dauert
+                float total_samples = (decay_ms / 1000.0f) * scd->inter_rate;
+                
+                // Berechne den Decay-Faktor, sodass das Signal nach 'total_samples' auf 1% abfällt.
+                // Formel: e^( ln(0.01) / total_samples )
+                float decay_factor_float = expf(-4.60517f / (total_samples + 1.0f));
+                
+                // Wandle float in Q15 Fixed-Point (0 bis 32768)
+                int32_t decay_q15 = (int32_t)(decay_factor_float * 32768.0f);
+                if (decay_q15 > 32767) decay_q15 = 32767;
+                
+                // Übergib die Werte an die RF-Schleife (Trigger setzen)
+                sferics_trigger_decay = decay_q15;
+                sferics_trigger_amp = (int32_t)amp_val; // Schreibt zuletzt, dient als "Go"-Signal
             }
         }
     }
@@ -181,6 +227,12 @@ int main(int argc, char *argv[]) {
     pthread_t ctid;
     pthread_create(&ctid, NULL, control_receiver, &cd);
 
+    // --- NEU: Starte den Sferics/Blitz-Receiver ---
+    SfericsControlData *scd = malloc(sizeof(SfericsControlData));
+    scd->inter_rate = current_inter_rate;
+    pthread_t stid;
+    pthread_create(&stid, NULL, sferics_receiver, scd);
+
     // TCP Setup für fl2k_tcp
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     int opt_sock = 1; setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt_sock, sizeof(opt_sock));
@@ -251,6 +303,12 @@ int main(int argc, char *argv[]) {
             channels[i].carrier_base_int = (int32_t)(16384.0f * channels[i].external_gain);
         }
 
+        // Lokale Sferics-State (für maximale Cache-Performance in den Registern)
+        int32_t sferics_env = 0;   // Aktuelle Hüllkurve (Q15)
+        int32_t sferics_amp = 0;   // Gescannte Amplitude
+        int32_t sferics_decay = 0; // Abklingfaktor (Q15)
+        uint32_t sferics_prng = 2463534242; // Seed für den Xorshift RNG
+
         // ====================================================================
         // SCHNELLE SCHLEIFE (RF RATE) - Sample & Hold Architektur
         // ====================================================================
@@ -282,6 +340,41 @@ int main(int argc, char *argv[]) {
                     
                     mix += modulated;
                 }
+
+                // ==========================================================
+                // --- SFERICS INJECTION (Direkt im HF-Summensignal) ---
+                // ==========================================================
+                // 1. Prüfen, ob ein neuer Blitz vom UDP-Thread ankam
+                if (sferics_trigger_amp > 0) {
+                    sferics_amp = sferics_trigger_amp;
+                    sferics_decay = sferics_trigger_decay;
+                    sferics_env = 32767;     // Starte Hüllkurve bei 1.0 (Q15 max)
+                    sferics_trigger_amp = 0; // Acknowledge (Clear trigger)
+                }
+
+                // 2. Blitz berechnen (nur wenn die Hüllkurve aktiv ist)
+                if (sferics_env > 0) {
+                    // Extrem schneller Xorshift32 PRNG (ersetzt langsames rand())
+                    sferics_prng ^= sferics_prng << 13;
+                    sferics_prng ^= sferics_prng >> 17;
+                    sferics_prng ^= sferics_prng << 5;
+                    
+                    // Rauschen generieren (-32768 bis +32767)
+                    int32_t noise = (int32_t)(sferics_prng & 0xFFFF) - 32768;
+                    
+                    // Amplitude mit Q15 Hüllkurve modulieren und skalieren
+                    // (noise * env) >> 15 hält das Signal im int16 Bereich, danach mit Amp multiplizieren
+                    int32_t burst = (((noise * sferics_env) >> 15) * sferics_amp) >> 8; 
+                    
+                    mix += burst; // Zum RF Summensignal hinzufügen
+                    
+                    // Hüllkurve für das nächste Sample abfallen lassen (Q15 Multiplikation)
+                    sferics_env = (sferics_env * sferics_decay) >> 15;
+                    
+                    // Hard-Cutoff um Rechenzeit zu sparen, wenn der Blitz "vorbei" ist
+                    if (sferics_env < 10) sferics_env = 0; 
+                }
+                // ==========================================================
                 
                 // Dynamische Skalierung basierend auf gewählter Bittiefe
                 int32_t dac_val;
