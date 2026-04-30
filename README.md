@@ -72,7 +72,7 @@ SDR_REMOTE_FL2k=false
 | Core2Duo/8GB  | 8-10 live stations | 5-6 live stations |
 | Core3i 1st gen/4GB| 11-13 live stations  |  8-10 live stations |
 
-Update: In addition to the liquid-dsp version, there is now a 2.5/5 MSPS version that primarily works with 32-bit integers, providing a significant boost in terms of the number of radio stations that can be created, even on older CPUs ! This version also supports various sampling rates and bit resolutions.
+Update: In addition to the liquid-dsp version, there is now a 2.5/5 MSPS version that primarily works with 32-bit integers, providing a significant boost in terms of the number of radio stations that can be created, even on older CPUs ! This version also supports various sampling rates and bit resolutions and sferics injection.
 
 ### (just 32bit Integer - version): `./build_modulators_int.sh`
 | CPU/RAM       | 2.5MSPS LW/lower BC band | 5MSPS full 2.5MHz rf spectrum  |
@@ -87,6 +87,9 @@ An entire long and medium wave band, generated in real-time on Intel Core2Duo an
 ![PERF322](https://github.com/radiolab81/AMWaveSynth/blob/main/www/int32versionperf2.jpg "Logo Title Text 1")
 ![PERF323](https://github.com/radiolab81/AMWaveSynth/blob/main/www/cpu.jpg "Logo Title Text 1")
 
+It is possible to pollute the entire generated RF band with Sferics. This can be initiated using external simulation tools via port 8889; The included Python script sferics_generator.py enables easy simulation of such thunderstorm disturbances.
+
+![SFERICS](https://github.com/radiolab81/AMWaveSynth/blob/main/www/sferics_sim.jpg "Logo Title Text 1")
 
 #### You can also use add-ons like the AMWaveSynthPropagationSimulator https://github.com/radiolab81/AMWaveSynthPropagationSimulator to externally modify the carriers of the AMWaveSynth, for example to simulate day and night propagation or grayline transitions on a real radio.
 
