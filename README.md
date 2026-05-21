@@ -1,6 +1,6 @@
 # AMWaveSynth
 ### Wave synthesizer for long- and mediumwave 
-![alt text](https://github.com/radiolab81/AMWaveSynth/blob/main/www/AMWaveSynth_rnd.jpg "Logo Title Text 1")
+![alt text](https://github.com/radiolab81/AMWaveSynth/blob/main/www/AMWaveSynth_rect.jpg "Logo Title Text 1")
 
 The AMWaveSynth is an environment for generating multiple parallel running AM-modulated radiostations for transmission via an SDR.
 
