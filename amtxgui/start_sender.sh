@@ -10,7 +10,7 @@ SDR_REMOTE_FL2k=false
 # ************ SDR Settings ******************
 
 MOD_ARGS=""
-USE_INT32_MATH_VERSION=false
+USE_INT32_MATH_VERSION=true
 USE_5MSPS_VERSION=false  # Status-Variable initialisieren
 
 # Wir verarbeiten die Argumente in 4er-Blöcken (Freq, BW, URL, Port)
@@ -19,19 +19,28 @@ while (( "$#" >= 4 )); do
     BW=$(echo "$2 * 1000" | bc | cut -d'.' -f1)
     URL=$3
     PORT=$4
+
+    # Prüfen, ob der Wert unter 50.000 liegt (dann ist es kHz)
+    if [ "$FREQ" -lt 50000 ]; then
+        FREQ_HZ=$((FREQ * 1000))
+    else
+        FREQ_HZ=$FREQ
+    fi
     
-    # Prüfung: Wenn eine Frequenz > 1250 ist, Flag auf true setzen
-    if [ "$FREQ" -gt 1250 ]; then
+    # Prüfung für 5MSPS: Grenzwert ist jetzt einheitlich 1.250.000 Hz
+    if [ "$FREQ_HZ" -gt 1250000 ]; then
         USE_5MSPS_VERSION=true
     fi
 
-    echo "Starte ffmpeg Instanz: $FREQ kHz | BW: $BW kHz | Port: $PORT"
+    echo "Starte ffmpeg Instanz: $FREQ (-> $FREQ_HZ Hz) | BW: $BW Hz | Port: $PORT"
    
     # ffmpeg -i "$URL" -af "lowpass=f=${BW}000" -f mpegts udp://127.0.0.1:$PORT &
     ffmpeg -stream_loop -1 -re -i "$URL" -af "lowpass=f=${BW}, volume=0.8, acompressor=threshold=-10dB:ratio=4"   -f u8 -ar 25000 -ac 1 udp://127.0.0.1:$PORT &    
     
     # Den String für am_modulator zusammenbauen
-    MOD_ARGS="$MOD_ARGS $PORT:$(($FREQ*1000))"
+    #MOD_ARGS="$MOD_ARGS $PORT:$(($FREQ*1000))"
+    # Den String für am_modulator zusammenbauen (nutzt die saubere Hz-Variable)
+    MOD_ARGS="$MOD_ARGS $PORT:$FREQ_HZ"
 
     shift 4 # Die nächsten 4 Parameter nehmen
 done
