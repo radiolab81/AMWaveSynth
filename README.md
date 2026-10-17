@@ -6,6 +6,15 @@ The AMWaveSynth is an environment for generating multiple parallel running AM-mo
 
 The AMWaveSynth receives the modulation signal as PCM samples over UDP ports (1234 and above), the RF signal containing all radio stations is available as a data stream on port 12345 for further processing or transmission with an SDR transmitter such as the FL2K-device.
 
+### 📻 Sister Projects & Related Hardware
+
+If you are looking for specialized versions of the AM Wave Synthesizer, check out these related projects:
+
+* **[HDRadio_AMWaveSynth](https://github.com/radiolab81/HDRadio_AMWaveSynth)** — US Hybrid Digital (IBOC / HD Radio) implementation for Medium Wave AM broadcasting. Generates hybrid analog/digital AM signals with embedded subcarriers and digital audio streams.
+* **[FPGA_AMWaveSynth](https://github.com/radiolab81/FPGA_AMWaveSynth)** — FPGA-accelerated hardware implementation of the multi-station AM synthesizer. Offloads DSP processing directly to FPGA logic for high performance, low-latency, and standalone RF generation.
+
+### Usage of AMWaveSynth
+
 There are two versions of the modulator as a console program: one for a medium NCO-samplerate of 2.5 MSPS (mainly for supplying longwave radio and RF wirecast receivers (Biennophone/TD-HF/Filodiffusione), the lower medium wave range is also reached) and a 5-MSPS NCO version for the entire frequency range up to 2.5 MHz.
 
 The modulator is used as follows:
